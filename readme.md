@@ -19,8 +19,6 @@ You also have to save the file as UTF-8 afterwards as I believe it is UTF-16E
 
 ![what it looks like](myfile_2.png?raw=true "what it looks like")
 
-![what it looks like](myfile_3.png?raw=true "what it looks like")
-
 # Details
 
 It has two main modes, one where you choose a piece type for a certain color on the board - specifically for Pawns, mostly, but works for other pieces too.
