@@ -15,7 +15,7 @@ You also have to save the file as UTF-8 afterwards as I believe it is UTF-16E
 
 # Interface / Output
 
-![what it looks like](myfile.png?raw=true "what it looks like")
+![what it looks like](myfile_3.png?raw=true "what it looks like")
 
 ![what it looks like](myfile_2.png?raw=true "what it looks like")
 
