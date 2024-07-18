@@ -1,0 +1,12 @@
+# Ignore all files and folders starting with the specified names
+l.pgn
+w.pgn
+_myfile
+w.pgn
+scrape_.py
+giant.pgn
+losses.pgn
+wins.pgn
+white.pgn
+example3.pgn
+winexample.pgn
