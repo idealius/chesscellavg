@@ -13,11 +13,13 @@ https://www.chess.com/forum/view/general/chess-pgn-database-over-9-million-games
 I used a PowerShell -tail command to grab them because I couldn't find much to view a 9GB file on Windows.
 You also have to save the file as UTF-8 afterwards as I believe it is UTF-16E
 
-# Output
+# Interface / Output
 
 ![what it looks like](myfile.png?raw=true "what it looks like")
-![what it looks like](myfile2.png?raw=true "what it looks like")
-![what it looks like](myfile3.png?raw=true "what it looks like")
+
+![what it looks like](myfile_2.png?raw=true "what it looks like")
+
+![what it looks like](myfile_3.png?raw=true "what it looks like")
 
 # Details
 
