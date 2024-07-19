@@ -13,6 +13,16 @@ https://www.chess.com/forum/view/general/chess-pgn-database-over-9-million-games
 I used a PowerShell -tail command to grab them because I couldn't find much to view a 9GB file on Windows.
 You also have to save the file as UTF-8 afterwards as I believe it is UTF-16E
 
+# Bonus
+
+Without looking at the names can you tell which one is Magnus, Hikaru, and Levy? :P
+
+![what it looks like](magnuscarlsen_wins.png?raw=true "what it looks like")
+
+![what it looks like](GothamChess_wins_1.png?raw=true "what it looks like")
+
+![what it looks like](hikaru_wins.png?raw=true "what it looks like")
+
 # Interface / Output
 
 ![what it looks like](myfile_3.png?raw=true "what it looks like")
@@ -48,3 +58,5 @@ I suppose it would be better if it could track openings and lines alongside the 
 It might be useful for programming a simple chessbot or refining a more advanced one.
 
 Use for commercial reasons or use for private reasons at your own risk keeping in mind the licenses of the imported libraries (pygame, chess)
+
+
