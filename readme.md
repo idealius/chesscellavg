@@ -17,34 +17,39 @@ You also have to save the file as UTF-8 afterwards as I believe it is UTF-16E
 
 Without looking at the names (don't look at the right!) can you tell which one is Magnus, Hikaru, and Levy? :P
 
-![what it looks like](magnuscarlsen_wins.png?raw=true "what it looks like")
+![what it looks like](pngs/magnuscarlsen_wins.png?raw=true "what it looks like")
 
-![what it looks like](GothamChess_wins_1.png?raw=true "what it looks like")
+![what it looks like](pngs/GothamChess_wins_1.png?raw=true "what it looks like")
 
-![what it looks like](hikaru_wins.png?raw=true "what it looks like")
+![what it looks like](pngs/hikaru_wins.png?raw=true "what it looks like")
 
 Here is an example command line to get fullscreen (it defaults to 800 x 600)
 ```
 python chesscellavg.py --pgnfile myfile.pgn --screen_width 1920 --screen_height 1080 --search_mode 1 --piece_type P --piece_color white --timeout 5
 ```
 
+Here is an example command line to split up a PGN file by wins / losses / draws (you can also just run either of these and it takes user input)
+```
+python pgnfilter.py --input myfile.pgn --output myfile2 --process split
+```
+
 I found a very large file (around 300 MB of only GM play from what I can tell mostly from 2011-2021) there is said to be some duplicates of games in there, but I think the trends are very easy to notice about patterns for pawn positioning:
 
-![what it looks like](gamesofgms_black_wins_black_pov.png?raw=true "what it looks like")
+![what it looks like](pngs/gamesofgms_black_wins_black_pov.png?raw=true "what it looks like")
 
-![what it looks like](gamesofgms_black_wins_white_pov.png?raw=true "what it looks like")
+![what it looks like](pngs/gamesofgms_black_wins_white_pov.png?raw=true "what it looks like")
 
-![what it looks like](gamesofgms_white_wins_black_pov.png?raw=true "what it looks like")
+![what it looks like](pngs/gamesofgms_white_wins_black_pov.png?raw=true "what it looks like")
 
-![what it looks like](gamesofgms_white_wins_white_pov.png?raw=true "what it looks like")
+![what it looks like](pngs/gamesofgms_white_wins_white_pov.png?raw=true "what it looks like")
 
-![what it looks like](gamesofgms_draw_black_pov.png?raw=true "what it looks like")
+![what it looks like](pngs/gamesofgms_draw_black_pov.png?raw=true "what it looks like")
 
-![what it looks like](gamesofgms_draw_white_pov.png?raw=true "what it looks like")
+![what it looks like](pngs/gamesofgms_draw_white_pov.png?raw=true "what it looks like")
 
-![what it looks like](gamesofgms_white_win_Qd1_pov.png?raw=true "what it looks like")
+![what it looks like](pngs/gamesofgms_white_win_Qd1_pov.png?raw=true "what it looks like")
 
-![what it looks like](gamesofgms_black_win_Qd1_pov.png?raw=true "what it looks like")
+![what it looks like](pngs/gamesofgms_black_win_Qd1_pov.png?raw=true "what it looks like")
 
 The GM wins for white and black are too large for me to push to github but the first link in this readme.md should point to the place you can acquire it. (There's a 7zip file at the bottom of that forum post.)
 
