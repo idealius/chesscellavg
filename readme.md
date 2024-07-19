@@ -15,7 +15,7 @@ You also have to save the file as UTF-8 afterwards as I believe it is UTF-16E
 
 # Bonus
 
-Without looking at the names can you tell which one is Magnus, Hikaru, and Levy? :P
+Without looking at the names (don't look at the right!) can you tell which one is Magnus, Hikaru, and Levy? :P
 
 ![what it looks like](magnuscarlsen_wins.png?raw=true "what it looks like")
 
