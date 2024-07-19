@@ -3,17 +3,27 @@ import chess
 import chess.pgn
 import io
 import argparse
+import re
 
 # Initialize pygame
 pygame.init()
 
+def consolidate_text_blocks(input_string): #Probably unnecessary as I found problems with existing code which did this, but also couldn't hurt for badly merged PGN's.
+    # Replace more than two consecutive newlines with exactly two newlines
+    cleaned_string = re.sub(r'\n{3,}', '\n\n', input_string)
+
+    # Consolidate blocks of text by removing double or more newlines between them
+    cleaned_string = re.sub(r'(\[.*?\])(?:\n{2,}\[.*?\])+', lambda m: '\n'.join(m.group().split('\n\n')), cleaned_string)
+
+    return cleaned_string
+
 # Function to parse PGN file and filter games
 def parse_and_filter_pgn(file_path, player_name, result_filter):
     with open(file_path, 'r') as f:
-        content = f.read()
+        content = consolidate_text_blocks(f.read())
     
-    games = content.split('\n[Event')
-    games = ['[Event' + game for game in games if game]
+    games = content.split('\n[Event ')
+    games = ['[Event ' + game for game in games if game]
 
     filtered_games = []
     for game_data in games:
@@ -56,10 +66,10 @@ def parse_and_filter_pgn(file_path, player_name, result_filter):
 
 def split_and_filter_pgn(file_path, player_name):
     with open(file_path, 'r') as f:
-        content = f.read()
+        content = consolidate_text_blocks(f.read())
     
-    games = content.split('\n[Event')
-    games = ['[Event' + game for game in games if game]
+    games = content.split('\n[Event ')
+    games = ['[Event ' + game for game in games if game]
 
     win_games = []
     loss_games = []
@@ -97,7 +107,7 @@ def save_filtered_pgn(filtered_games, save_file_name):
     with open(save_file_name, 'w') as f:
         for game_data in filtered_games:
             f.write(game_data)
-            f.write('\n\n\n')
+            f.write('\n')
 
 def main():
     parser = argparse.ArgumentParser(description="Filter and save PGN chess games.")
