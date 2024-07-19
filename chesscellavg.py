@@ -42,6 +42,7 @@ def parse_arguments():
     global board_size
     global square_size
     global board_display
+    global total_games
 
 
     parser = argparse.ArgumentParser(description="Chess PGN Processor")
@@ -193,7 +194,7 @@ def render_text(screen, text, position, color, size=DEFAULT_SIZE, update_screen_
         pygame.display.flip()
 
 def render_counts(screen, total_positions_seen):
-    global board_display
+    global board_display, total_games
     surface = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
         # Find the maximum value
     # Find the maximum value
@@ -239,7 +240,10 @@ def render_counts(screen, total_positions_seen):
     render_text(screen, "More options in commandline!", (square_size * 8 + 5, 90) , WHITE, 12)
     render_text(screen, settings["pgnfile"], (square_size * 8 + 5, 110) , WHITE, 12)
     render_text(screen, settings["piece_color"], (square_size * 8 + 5, 130) , WHITE, 12)
+    render_text(screen, "Total games: " + str(total_games), (square_size * 8 + 5, 150) , WHITE, 12)
 
+    if settings["piece_type"] is not None:
+        render_text(screen, "Tracking " + settings["piece_type"], (square_size * 8 + 5, screen_height - 120), WHITE, 12)
     render_text(screen, "ESC = Exit", (square_size * 8 + 5, screen_height - 90), WHITE, 12)
     render_text(screen, "PRTSCRN screenshot path_1.png", (square_size * 8 + 5, screen_height - 60), WHITE, 12)
     render_text(screen, "ENTER = New Query", (square_size * 8 + 5, screen_height - 30), WHITE, 12)
@@ -248,6 +252,7 @@ def render_counts(screen, total_positions_seen):
 
 # Function to process a single game
 def process_single_game(game_data, starting_positions, total_positions_seen, xy_coords):
+    global total_games
     positions = initialize_positions()
     positions_seen = defaultdict(int)
 
@@ -278,7 +283,7 @@ def process_single_game(game_data, starting_positions, total_positions_seen, xy_
         from_square = str(move)[:2]
         to_square = str(move)[2:4]
 
-        # Check if to_position is occupied and if so mark the other piece with an 'x' because it has been taken and isn't relevant to this part of the algo
+        # Check if to_position is occupied and if so mark the other piece with an 'x' because it has been taken and it's important to mark it that way to track pieces properly
         for path in positions:
             if path[-1] == to_square:
                 path.append('x')
@@ -336,6 +341,8 @@ def process_single_game(game_data, starting_positions, total_positions_seen, xy_
     if positions == [] or not positions_found:
         print("No positions found in game! Processing next game.")
         return
+    else:
+        total_games += 1
 
     if VERBOSE:
         print(positions)
@@ -370,7 +377,26 @@ def process_single_game(game_data, starting_positions, total_positions_seen, xy_
 
 # Function to update positions for all games
 def update_positions(games, starting_positions, xy_coords):
+    global settings
     total_positions_seen = defaultdict(int)
+
+    
+    settings["piece_color"] = None
+    for piece_type in white_piece_type:
+        for piece in piece_type:
+            if piece in starting_positions:
+                settings["piece_color"] = "white"
+                settings["piece_type"] = piece_type[0] + starting_positions[0]
+                break
+
+    if settings["piece_color"] is None:
+        for piece_type in black_piece_type:
+            for piece in piece_type:
+                if piece in starting_positions:
+                    settings["piece_color"] = "black"
+                    settings["piece_type"] = piece_type[0] + starting_positions[0]
+                    break
+
 
     for game_data in games:
         process_single_game(game_data, starting_positions, total_positions_seen, xy_coords)
@@ -412,7 +438,7 @@ def parse_pgn(file_path):
     return games
 
 def main():
-    global settings
+    global settings, total_games
     settings = parse_arguments()
     
     # for key, value in settings.items():
@@ -445,6 +471,7 @@ def main():
     stats = {}
 
     time = 0
+    total_games = 0
 
     while running:
         screen.fill(LBLUE)  # White background
@@ -502,6 +529,7 @@ def main():
                         save_screenshot(screen, file_path)
 
                     if input_mode == 'choose_mode':
+                        total_games = 0
                         if event.key == pygame.K_1 or event.key == pygame.K_KP1:
                             input_mode = 'piece_type'
                         elif event.key == pygame.K_2 or event.key == pygame.K_KP1:
@@ -525,6 +553,7 @@ def main():
                             piece_color = piece_color[:-1]
                         else:
                             piece_color += event.unicode
+
 
                     elif input_mode == 'position':
                         if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
