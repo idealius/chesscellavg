@@ -30,7 +30,7 @@ RED = (255, 0, 0)
 # BLUE = (0, 0, 255)
 DEFAULT_SIZE = 20 #font size
 
-VERBOSE = False
+VERBOSE = False #Debuggging
 
 board_display = "percent"
 default_filename = "myfile.pgn" # Not used for command line mode
@@ -234,17 +234,17 @@ def render_counts(screen, total_positions_seen):
     
     screen.blit(surface, (0, 0))
     
-    render_text(screen, "↑" + str(true_max), (square_size * 8 + 5, 10) , WHITE, 16)
-    render_text(screen, "Top square's total!", (square_size * 8 + 5, 30) , WHITE, 12)
-    render_text(screen, "(All %'s are based on the total)", (square_size * 8 + 5, 50) , WHITE, 12)
-    render_text(screen, "Promotions still considered pawns", (square_size * 8 + 5, 70) , WHITE, 12)
-    render_text(screen, "More options in commandline!", (square_size * 8 + 5, 90) , WHITE, 12)
-    render_text(screen, settings["pgnfile"], (square_size * 8 + 5, 110) , WHITE, 12)
-    render_text(screen, settings["piece_color"], (square_size * 8 + 5, 130) , WHITE, 12)
-    render_text(screen, "Total games: " + str(total_games), (square_size * 8 + 5, 150) , WHITE, 12)
-
     if settings["piece_type"] is not None:
-        render_text(screen, "Tracking " + settings["piece_type"], (square_size * 8 + 5, screen_height - 120), WHITE, 12)
+        render_text(screen, settings["piece_type"] + " for " + settings["piece_color"], (square_size * 8 + 5, 10), WHITE, 32)
+    render_text(screen, "↑" + str(true_max), (square_size * 8 + 5, 45) , WHITE, 16)
+    render_text(screen, "Top square's total!", (square_size * 8 + 5, 65) , WHITE, 12)
+    render_text(screen, "(All %'s are based on the total)", (square_size * 8 + 5, 95) , WHITE, 12)
+    render_text(screen, "Promotions still considered pawns", (square_size * 8 + 5, 115) , WHITE, 12)
+    render_text(screen, "More options in commandline!", (square_size * 8 + 5, 135) , WHITE, 12)
+    render_text(screen, settings["pgnfile"], (square_size * 8 + 5, 155) , WHITE, 12)
+    render_text(screen, "Total games: " + str(total_games), (square_size * 8 + 5, 175) , WHITE, 12)
+
+    
     render_text(screen, "ESC = Exit", (square_size * 8 + 5, screen_height - 90), WHITE, 12)
     render_text(screen, "PRTSCRN screenshot path_1.png", (square_size * 8 + 5, screen_height - 60), WHITE, 12)
     render_text(screen, "ENTER = New Query", (square_size * 8 + 5, screen_height - 30), WHITE, 12)
@@ -292,7 +292,7 @@ def process_single_game(game_data, starting_positions, total_positions_seen, xy_
         # Check for en passant capture
         piece = board.piece_at(chess.parse_square(from_square))
         if piece and piece.piece_type == chess.PAWN:
-            if abs(chess.parse_square(from_square) - chess.parse_square(to_square)) in [7, 9]:  # Diagonal move
+            if abs(chess.parse_square(from_square) - chess.parse_square(to_square)) in [7, 9]:  # Diagonal move - this has to do with numeric board positions, diagonal pawns will always be 7 or 9 tiles from each other in that system
                 if (from_square[1] == '5' and to_square[1] == '6') or (from_square[1] == '4' and to_square[1] == '3'):
                     # If the destination square is empty, it's an en passant capture
                     if board.piece_at(chess.parse_square(to_square)) is None:
@@ -311,7 +311,7 @@ def process_single_game(game_data, starting_positions, total_positions_seen, xy_
                 positions_found = True
                 break
 
-        # Check for castling, the above code handles the king's movement already, without this the rook's movement gets lost.
+        # Check for castling, the above code handles the king's movement already, without this next part the rook's movement is lost.
         piece = board.piece_at(chess.parse_square(from_square))
         if piece and piece.piece_type == chess.KING:
             if from_square == 'e1' and to_square == 'g1':
@@ -352,14 +352,13 @@ def process_single_game(game_data, starting_positions, total_positions_seen, xy_
 
     
     # Iterate through positions to count occurrences
-    for path in positions:
+    for path in positions: # as in the recorded path of the piece
         if path[0] in starting_positions:
             # Check and remove 'x' if it's the last element
             if path[-1] == 'x':
                 path.pop()  # Remove 'x' from the list
 
             for pos in path:
-                
                 if pos != 'x':
                     if VERBOSE:
                         print(pos)
@@ -376,18 +375,20 @@ def process_single_game(game_data, starting_positions, total_positions_seen, xy_
             print(coord, count)
         total_positions_seen[coord] += count
 
-# Function to update positions for all games
+# Function to update positions for all games - both the parent function for process_single_game and also the function used by analyze_by_piece_type
 def update_positions(games, starting_positions, xy_coords):
     global settings
     total_positions_seen = defaultdict(int)
-
     
-    settings["piece_color"] = None
+    settings["piece_color"] = None #this is just so we can display in text what piece(s) we're dealing with
     for piece_type in white_piece_type:
         for piece in piece_type:
             if piece in starting_positions:
                 settings["piece_color"] = "white"
-                settings["piece_type"] = piece_type[0] + starting_positions[0]
+                if len(starting_positions) < 2:
+                    settings["piece_type"] = piece_type[0] + starting_positions[0]
+                else:
+                    settings["piece_type"] = piece_type[0]
                 break
 
     if settings["piece_color"] is None:
@@ -395,7 +396,10 @@ def update_positions(games, starting_positions, xy_coords):
             for piece in piece_type:
                 if piece in starting_positions:
                     settings["piece_color"] = "black"
-                    settings["piece_type"] = piece_type[0] + starting_positions[0]
+                    if len(starting_positions) < 2:
+                        settings["piece_type"] = piece_type[0] + starting_positions[0]
+                    else:
+                        settings["piece_type"] = piece_type[0]
                     break
 
 
@@ -438,7 +442,9 @@ def parse_pgn(file_path):
 
     return games
 
-def main():
+# I did not expect this code to go toward a game loop but because it displays a board
+# and it's not good to split too much input between a command line and a GUI that's what ended up happening
+def main(): # Let's start with a bunch of initialization:
     global settings, total_games
     settings = parse_arguments()
     
@@ -474,6 +480,7 @@ def main():
     time = 0
     total_games = 0
 
+    # Main loop
     while running:
         screen.fill(LBLUE)  # White background
         draw_board(screen)
@@ -481,6 +488,7 @@ def main():
         if stats:
             render_counts(screen, stats)
             
+        # Just showing some text based on a sequential approach
         if (settings["timeout"] == -1):
             if input_mode == 'choose_mode':
                 render_text(screen, "Choose search mode (1) Piece Type, (2) Starting Position): ", (10, screen_height - 70), WHITE)
@@ -495,7 +503,8 @@ def main():
                 render_text(screen, "Enter starting position (e.g., a1, b2): " + starting_position, (10, screen_height - 70), WHITE)
 
         pygame.display.flip()
-                    
+        
+        # Timeout will always mean we're running from command line, and its original intention was to countdown during calculation too, but that never was pursued heavily
         if settings["timeout"] != -1 and first_run == False:
             time += 1
             
@@ -510,6 +519,8 @@ def main():
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         running = False
+        
+        # If we run from command line but we want to continue like a normal user afterwards that's what this is for (i.e. timeout = -1)
         elif isinstance(settings["search_mode"], int) and first_run:
             if settings["search_mode"] == 1:
                 render_text(screen, "Calculating...", (screen_width / 2, screen_height / 2), WHITE, 70, True, True)
@@ -518,6 +529,7 @@ def main():
                 render_text(screen, "Calculating...", (screen_width / 2, screen_height / 2), WHITE, 70, True, True)
                 stats = update_positions(games, [settings["starting_position"]], xy_coords)
             first_run = False
+        # Just regular input loop a regular user would use to handle input
         else:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
