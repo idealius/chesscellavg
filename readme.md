@@ -25,7 +25,7 @@ Without looking at the names (don't look at the right!) can you tell which one i
 
 Here is an example command line to get fullscreen (it defaults to 800 x 600)
 ```
-python chesscellavg.py --pgnfile myfile.pgn --screen_width 1920 --screen_height 1080 --search_mode 1 --piece_type P --piece_color white --timeout 5
+python chesscellavg.py --pgnfile myfile.pgn --screen_width 1920 --screen_height 1080 --search_mode 1 --piece_type P --piece_color white
 ```
 
 Here is an example command line to split up a PGN file by wins / losses / draws (you can also just run either of these and it takes user input)
