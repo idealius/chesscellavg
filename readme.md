@@ -5,7 +5,7 @@ I've also been curious if certain board positions are just overall very bad for 
 This is without considering any openings or defenses, which limits its usefulness, but since I couldn't find anything that did this, I made it.
 I used ChatGPT for a lot of it (who doesn't, anymore, especially for Python) but I added quite a bit in a short amount of time.
 
-If you need to find a large number of PGN games to mess with (besides your own) I included a myfile.pgn which is based on a few (5000+ I think?) Chess games. Varying ELO, many from Titled Tuesday, other actual tournaments mostly around the 2000 range but some are a bit lower.
+If you need to find a large number of PGN games to mess with (besides your own) I included a myfile.pgn which is based on a few (4000+) Chess games. Varying ELO, many from Titled Tuesday, other actual tournaments mostly around the 2000 range but some are a bit lower.
 
 I made it from the 9GB PGN file made in 2021 by this guy:
 https://www.chess.com/forum/view/general/chess-pgn-database-over-9-million-games
@@ -13,7 +13,7 @@ https://www.chess.com/forum/view/general/chess-pgn-database-over-9-million-games
 I used a PowerShell -tail command to grab them because I couldn't find much to view a 9GB file on Windows.
 You also have to save the file as UTF-8 afterwards as I believe it is UTF-16E
 
-# Bonus
+# Bonus data just for showing up:
 
 Without looking at the names (don't look at the right!) can you tell which one is Magnus, Hikaru, and Levy? :P
 
@@ -42,7 +42,11 @@ I found a very large file (around 300 MB of only GM play from what I can tell mo
 
 ![what it looks like](gamesofgms_draw_white_pov.png?raw=true "what it looks like")
 
-The GM wins for white and black are too large for me to push to github but the first link in this readme.md should point to the place you can acquire it.
+![what it looks like](gamesofgms_white_win_Qd1_pov.png?raw=true "what it looks like")
+
+![what it looks like](gamesofgms_black_win_Qd1_pov.png?raw=true "what it looks like")
+
+The GM wins for white and black are too large for me to push to github but the first link in this readme.md should point to the place you can acquire it. (There's a 7zip file at the bottom of that forum post.)
 
 # Details
 
