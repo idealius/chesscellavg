@@ -31,6 +31,7 @@ RED = (255, 0, 0)
 DEFAULT_SIZE = 20 #font size
 
 VERBOSE = False
+
 board_display = "percent"
 default_filename = "myfile.pgn" # Not used for command line mode
 settings = None
