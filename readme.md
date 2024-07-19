@@ -23,14 +23,6 @@ Without looking at the names can you tell which one is Magnus, Hikaru, and Levy?
 
 ![what it looks like](hikaru_wins.png?raw=true "what it looks like")
 
-# Interface / Output
-
-![what it looks like](myfile_3.png?raw=true "what it looks like")
-
-![raw totals mode](myfile_2.png?raw=true "by piece type (pawns)")
-
-![what it looks like](myfile_4.png?raw=true "what it looks like")
-
 Here is an example command line to get fullscreen (it defaults to 800 x 600)
 ```
 python chesscellavg.py --pgnfile myfile.pgn --screen_width 1920 --screen_height 1080 --search_mode 1 --piece_type P --piece_color white --timeout 5
