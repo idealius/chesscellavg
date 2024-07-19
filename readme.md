@@ -36,7 +36,7 @@ I found a very large file (around 300 MB of only GM play from what I can tell mo
 
 ![what it looks like](gamesofgms_white_wins_black_pov.png?raw=true "what it looks like")
 
-![what it looks like](gamesofgms_white_wins_as_white_pov.png?raw=true "what it looks like")
+![what it looks like](gamesofgms_white_wins_white_pov.png?raw=true "what it looks like")
 
 The GM wins for white and black are too large for me to push to github but the first link in this readme.md should point to the place you can acquire it.
 
