@@ -32,7 +32,7 @@ DEFAULT_SIZE = 20 #font size
 
 VERBOSE = False
 board_display = "percent"
-default_filename = "wexample.pgn" # Not used for command line mode
+default_filename = "myfile.pgn" # Not used for command line mode
 settings = None
 
 def parse_arguments():
@@ -450,7 +450,7 @@ def main():
     else:
         file_path = settings["pgnfile"]
     if file_path == "":
-        file_path = "wexample.pgn"
+        file_path = "myfile.pgn"
     
     settings["pgnfile"] = file_path # for use elsewhere in the code
     games = parse_pgn(file_path)
