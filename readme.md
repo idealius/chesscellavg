@@ -28,7 +28,8 @@ Here is an example command line to get fullscreen (it defaults to 800 x 600)
 python chesscellavg.py --pgnfile myfile.pgn --screen_width 1920 --screen_height 1080 --search_mode 1 --piece_type P --piece_color white --timeout 5
 ```
 
-I found a very large file (around 300 MB of only GM play from what I can tell mostly from 2011-2021) there is said to be some duplicates of games in there, but I think the trends are very easy to notice about pawn positioning:
+<<<<<<< HEAD
+I found a very large file (around 300 MB of only GM play from what I can tell mostly from 2011-2021) there is said to be some duplicates of games in there, but I think the trends are very easy to notice about patterns for pawn positioning:
 
 ![what it looks like](gamesofgms_black_wins_black_pov.png?raw=true "what it looks like")
 
@@ -38,8 +39,10 @@ I found a very large file (around 300 MB of only GM play from what I can tell mo
 
 ![what it looks like](gamesofgms_wins_as_white_pov.png?raw=true "what it looks like")
 
-The GM wins for white and black are in the file. I didn't include draws but maybe I'll get to it.
+The GM wins for white and black are too large for me to push to github but the first link in this readme.md should point to the place you can acquire it.
 
+=======
+>>>>>>> parent of 1b54fa4 (Games of GM's uploaded)
 # Details
 
 It has two main modes, one where you choose a piece type for a certain color on the board - specifically for Pawns, mostly, but works for other pieces too.
