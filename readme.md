@@ -64,11 +64,9 @@ The totals calculated are somewhat confusing in that it not only totals up the p
 
 I tested it mostly with Lichess games, but I just tried it with some Chess.com games and it appears to work even with time information embedded in the moves.
 
-I coded up a little utility called pyfilter.py which can be used to filter out PGN files for wins and losses by player name or color and output them. I'd rather have put them directly in the main .py file but it just seemed easier to make a separate utility. That said I did not add commandline options to the utility, yet.
+I coded up a little utility called pyfilter.py which can be used to filter out PGN files for wins and losses by player name or color and output them. I'd rather have put them directly in the main .py file but it just seemed easier to make a separate utility. 
 
-It can also track movement totals / percentages by piece starting position using standard PGN notation.
-
-It uses the chess python module as trying to decipher PGN notation with a computer from scratch is actually incredibly difficult for something like this - you would be surprised.
+It uses the chess python module as trying to decipher PGN notation with a computer from scratch is actually incredibly difficult for something like this - you would be surprised. Like, incredibly difficult. The people talking about PGN notation being a bigger of a hassle than it's actually worth ... are not lying.
 
 I added some commandline features so people can setup batch files to process a bunch and output screenshots - it shows percentages by default and I figured some people would prefer the totals so that's in there.
 
