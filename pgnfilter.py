@@ -21,8 +21,8 @@ def parse_and_filter_pgn(file_path, player_name, result_filter):
         game_stream = io.StringIO(game_data)
         game = chess.pgn.read_game(game_stream)
         if game:
-            white_player = game.headers.get('White', '').strip()
-            black_player = game.headers.get('Black', '').strip()
+            white_player = game.headers.get('White', '').strip().lower()
+            black_player = game.headers.get('Black', '').strip().lower()
             result = game.headers.get('Result', '*')
 
             if player_name in [white_player, black_player]:
@@ -61,11 +61,11 @@ def save_filtered_pgn(filtered_games, save_file_name):
             f.write('\n\n\n')
 
 def main():
-    file_path = input("Enter the path to the PGN file: ").strip()
+    file_path = input("Enter the path to the PGN file: ").strip().lower()
     if file_path == "":
         file_path = "example.pgn"
     
-    player_name = input("Enter player name to filter games (leave blank to include all players): ").strip()
+    player_name = input("Enter player name to filter games (leave blank to include all players): ").strip().lower()
     if player_name == "":
         print("Because no player name was chosen, wins will be considered 1-0 (white), losses 0-1 (black)")
     result_filter = input("Enter result filter (win/loss/draw/all): ").strip().lower()
