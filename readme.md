@@ -13,6 +13,9 @@ https://www.chess.com/forum/view/general/chess-pgn-database-over-9-million-games
 I used a PowerShell -tail command to grab them because I couldn't find much to view a 9GB file on Windows.
 You also have to save the file as UTF-8 afterwards as I believe it is UTF-16E
 
+You're probably better off just downloading one of these then filtering it with the included .py file:
+https://theweekinchess.com/twic
+
 # Bonus data just for showing up:
 
 Without looking at the names can you tell which one is Magnus, Hikaru, and Levy? :P
