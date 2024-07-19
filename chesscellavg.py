@@ -33,6 +33,7 @@ DEFAULT_SIZE = 20 #font size
 VERBOSE = False
 board_display = "percent"
 default_filename = "wexample.pgn" # Not used for command line mode
+settings = None
 
 def parse_arguments():
     global VERBOSE
@@ -80,6 +81,9 @@ def parse_arguments():
     # Validate piece_color if required
     if search_mode == 1 and piece_color is None:
         parser.error("--piece_color is required for search_mode 1")
+
+    if search_mode == 1 and piece_type is None:
+        parser.error("--piece_type is required for search_mode 1")
 
     if search_mode == 2 and starting_position is None:
         parser.error("--a starting_position is required for search_mode 2")
@@ -233,6 +237,8 @@ def render_counts(screen, total_positions_seen):
     render_text(screen, "(All %'s are based on the total)", (square_size * 8 + 5, 50) , WHITE, 12)
     render_text(screen, "Promotions still considered pawns", (square_size * 8 + 5, 70) , WHITE, 12)
     render_text(screen, "More options in commandline!", (square_size * 8 + 5, 90) , WHITE, 12)
+    render_text(screen, settings["pgnfile"], (square_size * 8 + 5, 110) , WHITE, 12)
+    render_text(screen, settings["piece_color"], (square_size * 8 + 5, 130) , WHITE, 12)
 
     render_text(screen, "ESC = Exit", (square_size * 8 + 5, screen_height - 90), WHITE, 12)
     render_text(screen, "PRTSCRN screenshot path_1.png", (square_size * 8 + 5, screen_height - 60), WHITE, 12)
@@ -373,10 +379,13 @@ def update_positions(games, starting_positions, xy_coords):
 
 # Function to get starting positions by piece type
 def get_starting_positions_by_piece_type(piece_type, piece_color):
+    global settings
     if piece_color == 'white' or piece_color == 'w':
         piece_array = white_piece_type
+        settings["piece_color"] = "white"
     else:
         piece_array = black_piece_type
+        settings["piece_color"] = "black"
 
     for piece in piece_array:
         if piece[0].upper() == piece_type.upper():
@@ -403,7 +412,7 @@ def parse_pgn(file_path):
     return games
 
 def main():
-    
+    global settings
     settings = parse_arguments()
     
     # for key, value in settings.items():
@@ -416,11 +425,13 @@ def main():
         file_path = settings["pgnfile"]
     if file_path == "":
         file_path = "wexample.pgn"
+    
+    settings["pgnfile"] = file_path # for use elsewhere in the code
     games = parse_pgn(file_path)
     xy_coords = True  # Don't set this to False as this will mess up some of the code with the rendering in pygame
 
     screen = pygame.display.set_mode((screen_width, screen_height))
-    pygame.display.set_caption("Chessboard")
+    pygame.display.set_caption("Chessboard Position Frequency")
 
     clock = pygame.time.Clock()
     running = True
@@ -507,6 +518,7 @@ def main():
                     elif input_mode == 'piece_color':
                         if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
                             input_mode = 'analyze_piece_type'
+                            
                             render_text(screen, "Calculating...", (screen_width / 2, screen_height / 2), WHITE, 70, True, True)
                             stats = analyze_games_by_piece_type(games, piece_type, piece_color, xy_coords)
                         elif event.key == pygame.K_BACKSPACE:
