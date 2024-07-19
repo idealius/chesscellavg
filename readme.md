@@ -50,7 +50,8 @@ The GM wins for white and black are too large for me to push to github but the f
 
 # Details
 
-It has two main modes, one where you choose a piece type for a certain color on the board - specifically for Pawns, mostly, but works for other pieces too.
+It has two main modes, one where you choose a piece type for a certain color on the board - specifically for Pawns, mostly, but works for other pieces too, then it totals all the movements in games, across multiple games, for each board tile. It can also do this for one piece at a time, based on starting position.
+
 The totals calculated are somewhat confusing in that it not only totals up the positions a piece moves in a game, if it moves back over that position again, it adds that to the total, too. So in some cases you'll see weird things like totals less than 100% for the home positions. This is because some other board position gets played multiple times a game. For a very short one game analysis it's not uncommon to see 50% on the home squares.
 
 I tested it mostly with Lichess games, but I just tried it with some Chess.com games and it appears to work even with time information embedded in the moves.
