@@ -22,7 +22,7 @@ Without looking at the names can you tell which one is Magnus, Hikaru, and Levy?
 
 ![what it looks like](pngs/magnuscarlsen_wins.png?raw=true "what it looks like")
 
-![what it looks like](pngs/GothamChess_wins_1.png?raw=true "what it looks like")
+![what it looks like](pngs/GothamChess_wins.png?raw=true "what it looks like")
 
 ![what it looks like](pngs/hikaru_wins.png?raw=true "what it looks like")
 
