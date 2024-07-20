@@ -197,15 +197,15 @@ def render_text(screen, text, position, color, size=DEFAULT_SIZE, update_screen_
 def render_counts(screen, total_positions_seen):
     global board_display, total_games
     surface = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
-        # Find the maximum value
+
     # Find the maximum value
     true_max = max(total_positions_seen.values(), default=1)
-    threshold = 20 #if moves to position is within this threshold of the top position then it and the max are removed from the circle alpha calculation
+    threshold = 20 # if moves to position is within this threshold of the top position then it and the max are removed from the circle alpha calculation
 
     # Remove all values within 5 of the maximum value
     filtered_values = [v for v in total_positions_seen.values() if abs(v - true_max) > threshold]
 
-    # Find the second maximum value
+    # Find the "second" maximum value
     max_count = max(filtered_values, default=true_max) if filtered_values else true_max
 
     font = pygame.font.SysFont("Arial", 16)  # Small font for counts
