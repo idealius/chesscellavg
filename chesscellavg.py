@@ -234,17 +234,18 @@ def render_counts(screen, total_positions_seen):
     
     screen.blit(surface, (0, 0))
     
-    render_text(screen, "↑" + str(true_max), (square_size * 8 + 5, 10) , WHITE, 16)
-    render_text(screen, "Top square's total!", (square_size * 8 + 5, 30) , WHITE, 12)
-    render_text(screen, "(All %'s are based on the total)", (square_size * 8 + 5, 50) , WHITE, 12)
-    render_text(screen, "Promotions still considered pawns", (square_size * 8 + 5, 70) , WHITE, 12)
-    render_text(screen, "More options in commandline!", (square_size * 8 + 5, 90) , WHITE, 12)
-    render_text(screen, settings["pgnfile"], (square_size * 8 + 5, 110) , WHITE, 12)
-    render_text(screen, settings["piece_color"], (square_size * 8 + 5, 130) , WHITE, 12)
-    render_text(screen, "Total games: " + str(total_games), (square_size * 8 + 5, 150) , WHITE, 12)
-
     if settings["piece_type"] is not None:
-        render_text(screen, "Tracking " + settings["piece_type"], (square_size * 8 + 5, screen_height - 120), WHITE, 12)
+        render_text(screen, "Tracking " + settings["piece_type"], (square_size * 8 + 5, 0), WHITE, 16)
+    render_text(screen, "↑" + str(true_max), (square_size * 8 + 5, 20) , WHITE, 16)
+    render_text(screen, "Top square's total!", (square_size * 8 + 5, 40) , WHITE, 16)
+    render_text(screen, "(All %'s are based on the total)", (square_size * 8 + 5, 60) , WHITE, 12)
+    render_text(screen, "Promotions still considered pawns", (square_size * 8 + 5, 80) , WHITE, 12)
+    render_text(screen, "More options in commandline!", (square_size * 8 + 5, 100) , WHITE, 12)
+    render_text(screen, settings["pgnfile"], (square_size * 8 + 5, 120) , WHITE, 12)
+    render_text(screen, settings["piece_color"], (square_size * 8 + 5, 140) , WHITE, 12)
+    render_text(screen, "Total games: " + str(total_games), (square_size * 8 + 5, 160) , WHITE, 12)
+
+    
     render_text(screen, "ESC = Exit", (square_size * 8 + 5, screen_height - 90), WHITE, 12)
     render_text(screen, "PRTSCRN screenshot path_1.png", (square_size * 8 + 5, screen_height - 60), WHITE, 12)
     render_text(screen, "ENTER = New Query", (square_size * 8 + 5, screen_height - 30), WHITE, 12)
@@ -387,7 +388,10 @@ def update_positions(games, starting_positions, xy_coords):
         for piece in piece_type:
             if piece in starting_positions:
                 settings["piece_color"] = "white"
-                settings["piece_type"] = piece_type[0] + starting_positions[0]
+                if len(starting_positions) > 1:
+                    settings["piece_type"] = piece_type[0]
+                else:
+                    settings["piece_type"] = piece_type[0] + starting_positions[0]
                 break
 
     if settings["piece_color"] is None:
@@ -395,7 +399,10 @@ def update_positions(games, starting_positions, xy_coords):
             for piece in piece_type:
                 if piece in starting_positions:
                     settings["piece_color"] = "black"
-                    settings["piece_type"] = piece_type[0] + starting_positions[0]
+                    if len(starting_positions) > 1:
+                        settings["piece_type"] = piece_type[0]
+                    else:
+                        settings["piece_type"] = piece_type[0] + starting_positions[0]
                     break
 
 
@@ -442,9 +449,6 @@ def main():
     global settings, total_games
     settings = parse_arguments()
     
-    # for key, value in settings.items():
-    #     print(f"{key}: {value}")
-    
     file_path = ""
     if settings["pgnfile"] is None:
         file_path = input(f"Enter the path to the PGN file (default={file_path}): ")
@@ -475,7 +479,7 @@ def main():
     total_games = 0
 
     while running:
-        screen.fill(LBLUE)  # White background
+        screen.fill(LBLUE)  # White-ish background
         draw_board(screen)
 
         if stats:
