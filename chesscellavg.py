@@ -199,7 +199,8 @@ def render_counts(screen, total_positions_seen):
 
     # Find the maximum value
     true_max = max(total_positions_seen.values(), default=1)
-    threshold = 20 # if moves to position is within this threshold of the top position then it and the max are removed from the circle alpha calculation
+    # threshold = 20 # if moves to position is within this threshold of the top position then it and the max are removed from the circle alpha calculation
+    threshold = true_max * .004 # if moves to position is within this threshold of the top position then it and the max are removed from the circle alpha calculation
 
     # Remove all values within 5 of the maximum value
     filtered_values = [v for v in total_positions_seen.values() if abs(v - true_max) > threshold]
