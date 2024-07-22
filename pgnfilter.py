@@ -30,7 +30,7 @@ def parse_and_filter_pgn(file_path, player_name, result_filter, color_filter):
             black_player = game.headers.get('Black', '').strip().lower()
             result = game.headers.get('Result', '*')
 
-            if player_name in [white_player, black_player] or not player_name:
+            if player_name in [white_player, black_player] or (player_name == "" and color_filter == ""):
                 if color_filter == 'white' and player_name != white_player and player_name != "":
                     continue
                 elif color_filter == 'black' and player_name != black_player and player_name != "":
@@ -48,7 +48,7 @@ def parse_and_filter_pgn(file_path, player_name, result_filter, color_filter):
                         filtered_games.append(game_data)
                 elif result_filter == 'all':
                     filtered_games.append(game_data)
-            elif not player_name:
+            elif player_name == "":
                 if result_filter == 'win' and result == '1-0':
                     filtered_games.append(game_data)
                 elif result_filter == 'loss' and result == '0-1':
@@ -79,7 +79,8 @@ def split_and_filter_pgn(file_path, player_name, color_filter):
             black_player = game.headers.get('Black', '').strip().lower()
             result = game.headers.get('Result', '*')
 
-            if player_name in [white_player, black_player] or not player_name:
+
+            if player_name in [white_player, black_player] or (player_name == "" and color_filter == ""):
                 if color_filter == 'white' and player_name != white_player:
                     continue
                 elif color_filter == 'black' and player_name != black_player:
@@ -92,7 +93,7 @@ def split_and_filter_pgn(file_path, player_name, color_filter):
                     loss_games.append(game_data)
                 elif result == '1/2-1/2':
                     draw_games.append(game_data)
-            elif not player_name:
+            elif player_name == "":
                 if result == '1-0':
                     win_games.append(game_data)
                 elif result == '0-1':
@@ -129,11 +130,13 @@ def main():
         file_path = args.input.strip().lower()
         if args.playername is not None:
             player_name = args.playername.strip().lower()
-        if player_name == "":
+        else:
+            player_name = ""
+        if  player_name == "":
             if args.color is None:
                 print("Error: You must specify either a player name or a color filter (or both).")
                 sys.exit(1)
-        color_filter = args.color.strip().lower();
+        color_filter = args.color.strip().lower()
     else:
         print("Command line arguments missing or in bad format 'pgnfilter --help' for more information.\n")
         file_path = input("Enter the path to the PGN file: ").strip().lower()
