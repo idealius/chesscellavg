@@ -33,7 +33,7 @@ python chesscellavg.py --pgnfile myfile.pgn --screen_width 1920 --screen_height 
 
 Here is an example command line to split up a PGN file by wins / losses / draws (you can also just run either of these and it takes user input)
 ```
-python pgnfilter.py --input myfile.pgn --output myfile2 --process split
+python pgnfilter.py --input myfile.pgn --output myfile2 --process split --color white
 ```
 
 I found a very large file (around 300 MB of only GM play from what I can tell mostly from 2011-2021) there is said to be some duplicates of games in there, but I think the trends are very easy to notice about patterns for pawn positioning:
