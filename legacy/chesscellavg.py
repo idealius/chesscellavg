@@ -1,19 +1,23 @@
-import pygame
 import chess
 import chess.pgn
 import io
 from collections import defaultdict
 import argparse
+import os
 
 # Current bugs:
-# None known but I'm sure there's some.
+# None known but I'm sure there's maybe one or two I haven't caught through the cycle.
+
+print("--help for more options\n")
+import pygame
+print("\n")
+
 
 # Calculate square size based on screen dimensions
 screen_width = 800  # Example screen dimensions
 screen_height = 600
 board_size = min(screen_width, screen_height)  # Use the smaller dimension
 square_size = board_size // 8
-file_path = "example.pgn"
 
 
 # Define colors
@@ -27,6 +31,9 @@ DEFAULT_SIZE = 20 #font size
 
 VERBOSE = False
 
+board_display = "percent"
+default_filename = "myfile.pgn" # Not used for command line mode
+settings = None
 
 def parse_arguments():
     global VERBOSE
@@ -34,40 +41,57 @@ def parse_arguments():
     global screen_width
     global board_size
     global square_size
-    global file_path
+    global board_display
+    global total_games
+
 
     parser = argparse.ArgumentParser(description="Chess PGN Processor")
 
     # Define default values
-    parser.add_argument('--pgnfile', type=str, default='example.pgn', help='Path to the PGN file.')
-    parser.add_argument('--verbose', action='store_true', help='Enable verbose output.')
-    parser.add_argument('--screen_width', type=int, default=800, help='Width of the screen.')
-    parser.add_argument('--screen_height', type=int, default=600, help='Height of the screen.')
+    parser.add_argument('--pgnfile', type=str, help='Path to the PGN file.')
+    parser.add_argument('--verbose', action='store_true', help='Enable debug output.')
+    parser.add_argument('--screen_width', type=int, default=screen_width, help='Width of the screen.')
+    parser.add_argument('--screen_height', type=int, default=screen_height, help='Height of the screen.')
     parser.add_argument('--search_mode', type=int, choices=[1, 2], help='Search mode: 1 for Piece Type, 2 for Starting Position.')
-    parser.add_argument('--piece_type', type=str, help='Type of piece to search for (K)ing, (P)awn, etc.')
-    parser.add_argument('--starting_position', type=str, help='Starting position to search for (e.g., a1, b2).')
-    parser.add_argument('--piece_color', type=str, help='Color of the piece to search for (white or black).')
-    parser.add_argument('--timeout', type=int, default=-1, help='Timeout in seconds. Default is -1, meaning no timeout.')
-
+    parser.add_argument('--piece_type', type=str, help='Type of piece to search for (K)ing, (P)awn, etc. Required for piece type search mode')
+    parser.add_argument('--starting_position', type=str, help='Starting position to search for (e.g., a1, b2). Required for starting position search mode')
+    parser.add_argument('--piece_color', type=str, help='Color of the piece to search for (white or black). Required for piece type search mode')
+    parser.add_argument('--timeout', type=int, default=-1, help='Timeout in seconds. Default is -1, meaning no timeout. Adding a timeout automatically saves a screenshot before exiting. Doesn\'t start until calculating is finished. Prints a countdown every quarter of the total timeout.')
+    parser.add_argument('--board_display', type=str, default=board_display, help='Show board positions in (percent) or (totals)')
     args = parser.parse_args()
 
+    if '--help' in vars(args):
+        parser.print_help()
+        return
+
     # Extract arguments
-    file_path = args.pgnfile
+    pgnfile = args.pgnfile
     VERBOSE = args.verbose
     screen_width = args.screen_width
     screen_height = args.screen_height
     search_mode = args.search_mode
     piece_type = args.piece_type if search_mode == 1 else None
     starting_position = args.starting_position if search_mode == 2 else None
-    piece_color = args.piece_color if (search_mode in [1, 2] and args.piece_color) else None
+    piece_color = args.piece_color if search_mode == 1 and args.piece_color else None
+    board_display = args.board_display
     timeout = args.timeout
 
     board_size = min(screen_width, screen_height)  # Use the smaller dimension
     square_size = board_size // 8
 
     # Validate piece_color if required
-    if search_mode in [1, 2] and piece_color is None:
-        parser.error("--piece_color is required for search_mode 1 or 2")
+    if search_mode == 1 and piece_color is None:
+        parser.error("--piece_color is required for search_mode 1")
+
+    if search_mode == 1 and piece_type is None:
+        parser.error("--piece_type is required for search_mode 1")
+
+    if search_mode == 2 and starting_position is None:
+        parser.error("--a starting_position is required for search_mode 2")
+
+    if parser.usage is not None and pgnfile is None:
+        parser.error("You need to supply a filename if you're going to use arguments.")
+
 
     return {
         'pgnfile': pgnfile,
@@ -78,6 +102,7 @@ def parse_arguments():
         'piece_type': piece_type,
         'starting_position': starting_position,
         'piece_color': piece_color,
+        'board_display': board_display,
         'timeout': timeout
     }
 
@@ -127,6 +152,17 @@ def chess_notation_to_indices(notation):
     rank = int(notation[1])
     return (file, rank)
 
+def save_screenshot(screen, file_path):
+    # Strip the file extension to get the base filename
+    base_filename, _ = os.path.splitext(file_path)
+    suffix = 0
+    file_name = f"{base_filename}.png"
+    while os.path.exists(file_name):
+        suffix += 1
+        file_name = f"{base_filename}_{suffix}.png"
+    pygame.image.save(screen, file_name)
+    print(f"Screenshot saved as {file_name}")
+
 # Function to draw chessboard
 def draw_board(screen):
     for row in range(8):
@@ -134,25 +170,42 @@ def draw_board(screen):
             color = LBLUE if (row + col) % 2 == 0 else DBLUE
             pygame.draw.rect(screen, color, (col * square_size, row * square_size, square_size, square_size))
 
-def render_text(screen, text, position, color, size=DEFAULT_SIZE):
+def render_text(screen, text, position, color, size=DEFAULT_SIZE, update_screen_immediately=False, center=False):
     font = pygame.font.SysFont("Arial", size)
-    text_surface = font.render(text, True, BLACK)
-    shadow_position = (position[0], position[1]+1)
-    screen.blit(text_surface, shadow_position)
     text_surface = font.render(text, True, color)
-    screen.blit(text_surface, position)
+    text_rect = text_surface.get_rect()
+
+    if center:
+        # Center the text around the given position
+        text_rect.center = position
+    else:
+        # Position text based on the top-left corner
+        text_rect.topleft = position
+
+    # Add shadow for better readability
+    shadow_surface = font.render(text, True, (0, 0, 0))  # Black shadow
+    shadow_position = (text_rect.x + 1, text_rect.y + 1)
+    screen.blit(shadow_surface, shadow_position)
+    
+    # Render the actual text
+    screen.blit(text_surface, text_rect.topleft)
+
+    if update_screen_immediately:
+        pygame.display.flip()
 
 def render_counts(screen, total_positions_seen):
+    global board_display, total_games
     surface = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
-        # Find the maximum value
+
     # Find the maximum value
     true_max = max(total_positions_seen.values(), default=1)
-    threshold = 20 #if moves to position is within this threshold of the top position then it and the max are removed from the circle alpha calculation
+    # threshold = 20 # if moves to position is within this threshold of the top position then it and the max are removed from the circle alpha calculation
+    threshold = true_max * .004 # if moves to position is within this threshold of the top position then it and the max are removed from the circle alpha calculation
 
     # Remove all values within 5 of the maximum value
     filtered_values = [v for v in total_positions_seen.values() if abs(v - true_max) > threshold]
 
-    # Find the second maximum value
+    # Find the "second" maximum value
     max_count = max(filtered_values, default=true_max) if filtered_values else true_max
 
     font = pygame.font.SysFont("Arial", 16)  # Small font for counts
@@ -172,22 +225,36 @@ def render_counts(screen, total_positions_seen):
         pygame.draw.circle(surface, color, circle_center, radius)
 
         # Render count number
-        count_text = font.render(f"{(count / true_max * 100):.1f}%", True, WHITE)
+        if board_display == "percent":
+            count_text = font.render(f"{(count / true_max * 100):.1f}%", True, WHITE)
+        else:
+            count_text = font.render(f"{count}", True, WHITE)
         text_rect = count_text.get_rect(center=circle_center)
         surface.blit(count_text, text_rect)
     
     screen.blit(surface, (0, 0))
     
-    render_text(screen, "↑" + str(max_count), (square_size * 8 + 5, 10) , WHITE, 16)
-    render_text(screen, "Top square's total!", (square_size * 8 + 5, 30) , WHITE, 12)
-    render_text(screen, "(All %'s are based on the total)", (square_size * 8 + 5, 50) , WHITE, 12)
-    render_text(screen, "Promotions still considered pawns", (square_size * 8 + 5, 70) , WHITE, 12)
+    if settings["piece_type"] is not None:
+        render_text(screen, "Tracking " + settings["piece_type"], (square_size * 8 + 5, 0), WHITE, 16)
+    render_text(screen, "↑" + str(true_max), (square_size * 8 + 5, 20) , WHITE, 16)
+    render_text(screen, "Top square's total!", (square_size * 8 + 5, 40) , WHITE, 16)
+    render_text(screen, "(All %'s are based on the total)", (square_size * 8 + 5, 60) , WHITE, 12)
+    # render_text(screen, "Promotions still considered pawns", (square_size * 8 + 5, 80) , WHITE, 12)
+    render_text(screen, "More options in commandline!", (square_size * 8 + 5, 100) , WHITE, 12)
+    render_text(screen, settings["pgnfile"], (square_size * 8 + 5, 120) , WHITE, 12)
+    render_text(screen, settings["piece_color"], (square_size * 8 + 5, 140) , WHITE, 12)
+    render_text(screen, "Total games: " + str(total_games), (square_size * 8 + 5, 160) , WHITE, 12)
+
+    
+    render_text(screen, "ESC = Exit", (square_size * 8 + 5, screen_height - 90), WHITE, 12)
+    render_text(screen, "PRTSCRN screenshot path_1.png", (square_size * 8 + 5, screen_height - 60), WHITE, 12)
     render_text(screen, "ENTER = New Query", (square_size * 8 + 5, screen_height - 30), WHITE, 12)
 
 
 
 # Function to process a single game
 def process_single_game(game_data, starting_positions, total_positions_seen, xy_coords):
+    global total_games
     positions = initialize_positions()
     positions_seen = defaultdict(int)
 
@@ -218,7 +285,7 @@ def process_single_game(game_data, starting_positions, total_positions_seen, xy_
         from_square = str(move)[:2]
         to_square = str(move)[2:4]
 
-        # Check if to_position is occupied and if so mark the other piece with an 'x' because it has been taken and isn't relevant to this part of the algo
+        # Check if to_position is occupied and if so mark the other piece with an 'x' because it has been taken and it's important to mark it that way to track pieces properly
         for path in positions:
             if path[-1] == to_square:
                 path.append('x')
@@ -276,6 +343,8 @@ def process_single_game(game_data, starting_positions, total_positions_seen, xy_
     if positions == [] or not positions_found:
         print("No positions found in game! Processing next game.")
         return
+    else:
+        total_games += 1
 
     if VERBOSE:
         print(positions)
@@ -310,7 +379,32 @@ def process_single_game(game_data, starting_positions, total_positions_seen, xy_
 
 # Function to update positions for all games
 def update_positions(games, starting_positions, xy_coords):
+    global settings
     total_positions_seen = defaultdict(int)
+
+    
+    settings["piece_color"] = None
+    for piece_type in white_piece_type:
+        for piece in piece_type:
+            if piece in starting_positions:
+                settings["piece_color"] = "white"
+                if len(starting_positions) > 1:
+                    settings["piece_type"] = piece_type[0]
+                else:
+                    settings["piece_type"] = piece_type[0] + starting_positions[0]
+                break
+
+    if settings["piece_color"] is None:
+        for piece_type in black_piece_type:
+            for piece in piece_type:
+                if piece in starting_positions:
+                    settings["piece_color"] = "black"
+                    if len(starting_positions) > 1:
+                        settings["piece_type"] = piece_type[0]
+                    else:
+                        settings["piece_type"] = piece_type[0] + starting_positions[0]
+                    break
+
 
     for game_data in games:
         process_single_game(game_data, starting_positions, total_positions_seen, xy_coords)
@@ -319,10 +413,13 @@ def update_positions(games, starting_positions, xy_coords):
 
 # Function to get starting positions by piece type
 def get_starting_positions_by_piece_type(piece_type, piece_color):
+    global settings
     if piece_color == 'white' or piece_color == 'w':
         piece_array = white_piece_type
+        settings["piece_color"] = "white" # For display purposes only.
     else:
         piece_array = black_piece_type
+        settings["piece_color"] = "black"
 
     for piece in piece_array:
         if piece[0].upper() == piece_type.upper():
@@ -343,23 +440,34 @@ def parse_pgn(file_path):
     with open(file_path, 'r') as f:
         content = f.read()
     
-        games = content.split('\n[Event')
-        games = ['[Event' + game for game in games if game]
+        games = content.split('\n[Event ')
+        games = ['[Event ' + game for game in games if game]
 
     return games
 
 def main():
-    file_path = input("Enter the path to the PGN file: ")
+    global settings, total_games
+    settings = parse_arguments()
+    
+    file_path = ""
+    if settings["pgnfile"] is None:
+        file_path = input(f"Enter the path to the PGN file (default={file_path}): ")
+    else:
+        file_path = settings["pgnfile"]
     if file_path == "":
-        file_path = "wexample.pgn"
+        file_path = "myfile.pgn"
+    
+    settings["pgnfile"] = file_path # for use elsewhere in the code
     games = parse_pgn(file_path)
     xy_coords = True  # Don't set this to False as this will mess up some of the code with the rendering in pygame
 
     screen = pygame.display.set_mode((screen_width, screen_height))
-    pygame.display.set_caption("Chessboard")
+    pygame.display.set_caption("Chessboard Position Frequency")
 
     clock = pygame.time.Clock()
     running = True
+    
+    first_run = True
 
     input_mode = 'choose_mode'  # Start by asking for the mode (position or piece type)
     piece_type = ""
@@ -367,67 +475,104 @@ def main():
     starting_position = ""
     stats = {}
 
+    time = 0
+    total_games = 0
+
     while running:
-        screen.fill(LBLUE)  # White background
+        screen.fill(LBLUE)  # White-ish background
         draw_board(screen)
 
         if stats:
             render_counts(screen, stats)
+            
+        if (settings["timeout"] == -1):
+            if input_mode == 'choose_mode':
+                render_text(screen, "Choose search mode (1) Piece Type, (2) Starting Position): ", (10, screen_height - 70), WHITE)
 
-        if input_mode == 'choose_mode':
-            render_text(screen, "Choose search mode (1) Piece Type, (2) Starting Position): ", (10, screen_height - 70), WHITE)
+            elif input_mode == 'piece_type':
+                render_text(screen, "Enter piece type (K)ing, (P)awn, etc: " + piece_type, (10, screen_height - 70), WHITE)
 
-        elif input_mode == 'piece_type':
-            render_text(screen, "Enter piece type (K)ing, (P)awn, etc: " + piece_type, (10, screen_height - 70), WHITE)
+            elif input_mode == 'piece_color':
+                render_text(screen, "Enter piece color (w)hite / (b)lack: " + piece_color, (10, screen_height - 70), WHITE)
 
-        elif input_mode == 'piece_color':
-            render_text(screen, "Enter piece color (w)hite / (b)lack: " + piece_color, (10, screen_height - 70), WHITE)
-
-        elif input_mode == 'position':
-            render_text(screen, "Enter starting position (e.g., a1, b2): " + starting_position, (10, screen_height - 70), WHITE)
+            elif input_mode == 'position':
+                render_text(screen, "Enter starting position (e.g., a1, b2): " + starting_position, (10, screen_height - 70), WHITE)
 
         pygame.display.flip()
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+                    
+        if settings["timeout"] != -1 and first_run == False:
+            time += 1
+            
+            if (time * 0.01667) >= settings["timeout"]: 
                 running = False
+                save_screenshot(screen, file_path)
+            elif time % (settings["timeout"] * 60 // 4) == 0:
+                print(str(settings["timeout"] - int(time * 0.01667)) + " seconds left until exiting.")
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+        elif isinstance(settings["search_mode"], int) and first_run:
+            if settings["search_mode"] == 1:
+                render_text(screen, "Calculating...", (screen_width / 2, screen_height / 2), WHITE, 70, True, True)
+                stats = analyze_games_by_piece_type(games, settings["piece_type"], settings["piece_color"], xy_coords)
+            else:
+                render_text(screen, "Calculating...", (screen_width / 2, screen_height / 2), WHITE, 70, True, True)
+                stats = update_positions(games, [settings["starting_position"]], xy_coords)
+            first_run = False
+        else:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
 
-            elif event.type == pygame.KEYDOWN:
-                if input_mode == 'choose_mode':
-                    if event.key == pygame.K_1 or event.key == pygame.K_KP1:
-                        input_mode = 'piece_type'
-                    elif event.key == pygame.K_2 or event.key == pygame.K_KP1:
-                        input_mode = 'position'
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        running = False
+                    elif event.key == pygame.K_PRINTSCREEN:
+                        save_screenshot(screen, file_path)
 
-                elif input_mode == 'piece_type':
-                    if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
-                        input_mode = 'piece_color'
-                    elif event.key == pygame.K_BACKSPACE:
-                        piece_type = piece_type[:-1]
-                    else:
-                        piece_type += event.unicode
+                    if input_mode == 'choose_mode':
+                        total_games = 0
+                        if event.key == pygame.K_1 or event.key == pygame.K_KP1:
+                            input_mode = 'piece_type'
+                        elif event.key == pygame.K_2 or event.key == pygame.K_KP1:
+                            input_mode = 'position'
 
-                elif input_mode == 'piece_color':
-                    if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
-                        input_mode = 'analyze_piece_type'
-                        stats = analyze_games_by_piece_type(games, piece_type, piece_color, xy_coords)
-                    elif event.key == pygame.K_BACKSPACE:
-                        piece_color = piece_color[:-1]
-                    else:
-                        piece_color += event.unicode
+                    elif input_mode == 'piece_type':
+                        if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+                            input_mode = 'piece_color'
+                        elif event.key == pygame.K_BACKSPACE:
+                            piece_type = piece_type[:-1]
+                        else:
+                            piece_type += event.unicode
 
-                elif input_mode == 'position':
-                    if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
-                        input_mode = 'analyze_position'
-                        stats = update_positions(games, [starting_position], xy_coords)
-                    elif event.key == pygame.K_BACKSPACE:
-                        starting_position = starting_position[:-1]
-                    else:
-                        starting_position += event.unicode
+                    elif input_mode == 'piece_color':
+                        if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+                            input_mode = 'analyze_piece_type'
+                            
+                            render_text(screen, "Calculating...", (screen_width / 2, screen_height / 2), WHITE, 70, True, True)
+                            stats = analyze_games_by_piece_type(games, piece_type, piece_color, xy_coords)
+                        elif event.key == pygame.K_BACKSPACE:
+                            piece_color = piece_color[:-1]
+                        else:
+                            piece_color += event.unicode
 
-                elif input_mode == 'analyze_piece_type' or input_mode == 'analyze_position':
-                    if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
-                        input_mode = 'choose_mode'  # After analysis, go back to choosing mode
+
+                    elif input_mode == 'position':
+                        if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+                            input_mode = 'analyze_position'
+                            render_text(screen, "Calculating...", (screen_width / 2, screen_height / 2), WHITE, 70, True, True)
+                            stats = update_positions(games, [starting_position], xy_coords)
+                        elif event.key == pygame.K_BACKSPACE:
+                            starting_position = starting_position[:-1]
+                        else:
+                            starting_position += event.unicode
+
+                    elif input_mode == 'analyze_piece_type' or input_mode == 'analyze_position':
+                        if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
+                            input_mode = 'choose_mode'  # After analysis, go back to choosing mode
 
         clock.tick(60)
 
@@ -435,8 +580,4 @@ def main():
 
 
 if __name__ == "__main__":
-    settings = parse_arguments()
-    print("Configuration:")
-    for key, value in settings.items():
-        print(f"{key}: {value}")
     main()

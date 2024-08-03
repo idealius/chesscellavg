@@ -4,21 +4,20 @@ import io
 from collections import defaultdict
 import argparse
 import os
-
-# Current bugs:
-# None known but I'm sure there's some.
+import pygame
+import math
 
 print("--help for more options\n")
-import pygame
 print("\n")
 
+# Known bugs:
+# Positions seems to not calculate considering pawns get promoted, while threaten situations it does.
 
 # Calculate square size based on screen dimensions
-screen_width = 800  # Example screen dimensions
+screen_width = 800
 screen_height = 600
-board_size = min(screen_width, screen_height)  # Use the smaller dimension
+board_size = min(screen_width, screen_height)
 square_size = board_size // 8
-
 
 # Define colors
 WHITE = (255, 255, 255)
@@ -26,28 +25,21 @@ BLACK = (0, 0, 0)
 LBLUE = (127, 127, 192)
 DBLUE = (0, 0, 127)
 RED = (255, 0, 0)
-# BLUE = (0, 0, 255)
-DEFAULT_SIZE = 20 #font size
+GREEN = (0, 255, 0)
+DEFAULT_SIZE = 20  # font size
 
 VERBOSE = False
 
 board_display = "percent"
-default_filename = "myfile.pgn" # Not used for command line mode
+default_filename = "myfile.pgn"
 settings = None
+total_games = 0
 
 def parse_arguments():
-    global VERBOSE
-    global screen_height
-    global screen_width
-    global board_size
-    global square_size
-    global board_display
-    global total_games
-
+    global VERBOSE, screen_height, screen_width, board_size, square_size, board_display
 
     parser = argparse.ArgumentParser(description="Chess PGN Processor")
 
-    # Define default values
     parser.add_argument('--pgnfile', type=str, help='Path to the PGN file.')
     parser.add_argument('--verbose', action='store_true', help='Enable debug output.')
     parser.add_argument('--screen_width', type=int, default=screen_width, help='Width of the screen.')
@@ -56,7 +48,7 @@ def parse_arguments():
     parser.add_argument('--piece_type', type=str, help='Type of piece to search for (K)ing, (P)awn, etc. Required for piece type search mode')
     parser.add_argument('--starting_position', type=str, help='Starting position to search for (e.g., a1, b2). Required for starting position search mode')
     parser.add_argument('--piece_color', type=str, help='Color of the piece to search for (white or black). Required for piece type search mode')
-    parser.add_argument('--timeout', type=int, default=-1, help='Timeout in seconds. Default is -1, meaning no timeout. Adding a timeout automatically saves a screenshot before exiting. Doesn\'t start until calculating is finished. Prints a countdown every quarter of the total timeout.')
+    parser.add_argument('--timeout', type=int, default=-1, help='Timeout in seconds. Default is -1, meaning no timeout.')
     parser.add_argument('--board_display', type=str, default=board_display, help='Show board positions in (percent) or (totals)')
     args = parser.parse_args()
 
@@ -64,49 +56,14 @@ def parse_arguments():
         parser.print_help()
         return
 
-    # Extract arguments
-    pgnfile = args.pgnfile
     VERBOSE = args.verbose
     screen_width = args.screen_width
     screen_height = args.screen_height
-    search_mode = args.search_mode
-    piece_type = args.piece_type if search_mode == 1 else None
-    starting_position = args.starting_position if search_mode == 2 else None
-    piece_color = args.piece_color if search_mode == 1 and args.piece_color else None
-    board_display = args.board_display
-    timeout = args.timeout
-
-    board_size = min(screen_width, screen_height)  # Use the smaller dimension
+    board_size = min(screen_width, screen_height)
     square_size = board_size // 8
+    board_display = args.board_display
 
-    # Validate piece_color if required
-    if search_mode == 1 and piece_color is None:
-        parser.error("--piece_color is required for search_mode 1")
-
-    if search_mode == 1 and piece_type is None:
-        parser.error("--piece_type is required for search_mode 1")
-
-    if search_mode == 2 and starting_position is None:
-        parser.error("--a starting_position is required for search_mode 2")
-
-    if parser.usage is not None and pgnfile is None:
-        parser.error("You need to supply a filename if you're going to use arguments.")
-
-
-    return {
-        'pgnfile': pgnfile,
-        'VERBOSE': VERBOSE,
-        'screen_width': screen_width,
-        'screen_height': screen_height,
-        'search_mode': search_mode,
-        'piece_type': piece_type,
-        'starting_position': starting_position,
-        'piece_color': piece_color,
-        'board_display': board_display,
-        'timeout': timeout
-    }
-
-
+    return vars(args)
 
 # Initialize pygame
 pygame.init()
@@ -153,7 +110,6 @@ def chess_notation_to_indices(notation):
     return (file, rank)
 
 def save_screenshot(screen, file_path):
-    # Strip the file extension to get the base filename
     base_filename, _ = os.path.splitext(file_path)
     suffix = 0
     file_name = f"{base_filename}.png"
@@ -163,7 +119,6 @@ def save_screenshot(screen, file_path):
     pygame.image.save(screen, file_name)
     print(f"Screenshot saved as {file_name}")
 
-# Function to draw chessboard
 def draw_board(screen):
     for row in range(8):
         for col in range(8):
@@ -176,55 +131,67 @@ def render_text(screen, text, position, color, size=DEFAULT_SIZE, update_screen_
     text_rect = text_surface.get_rect()
 
     if center:
-        # Center the text around the given position
         text_rect.center = position
     else:
-        # Position text based on the top-left corner
         text_rect.topleft = position
 
-    # Optional: Add shadow for better readability
-    shadow_surface = font.render(text, True, (0, 0, 0))  # Black shadow
+    shadow_surface = font.render(text, True, (0, 0, 0))
     shadow_position = (text_rect.x + 1, text_rect.y + 1)
     screen.blit(shadow_surface, shadow_position)
     
-    # Render the actual text
     screen.blit(text_surface, text_rect.topleft)
 
     if update_screen_immediately:
         pygame.display.flip()
 
-def render_counts(screen, total_positions_seen):
-    global board_display, total_games
+def render_counts(screen, total_positions_seen, total_threatened_positions, total_threat_positions, display_mode):
+    global board_display, total_games, settings
     surface = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
 
-    # Find the maximum value
-    true_max = max(total_positions_seen.values(), default=1)
-    # threshold = 20 # if moves to position is within this threshold of the top position then it and the max are removed from the circle alpha calculation
-    threshold = true_max * .004 # if moves to position is within this threshold of the top position then it and the max are removed from the circle alpha calculation
+    if display_mode == 'positions':
+        data_to_display = total_positions_seen
+    elif display_mode == 'threatened':
+        data_to_display = total_threatened_positions
+    else:
+        data_to_display = total_threat_positions
 
-    # Remove all values within 5 of the maximum value
-    filtered_values = [v for v in total_positions_seen.values() if abs(v - true_max) > threshold]
+    true_max = max(data_to_display.values(), default=1)
+    true_min = min(data_to_display.values(), default=0)
 
-    # Find the "second" maximum value
-    max_count = max(filtered_values, default=true_max) if filtered_values else true_max
+    font = pygame.font.SysFont("Arial", 16)
 
-    font = pygame.font.SysFont("Arial", 16)  # Small font for counts
-
-    for coord, count in total_positions_seen.items():
+    for coord, count in data_to_display.items():
         x, y = map(int, coord.split(','))
-        # Reverse the y-coordinate
         y = 9 - y
-        intensity = int((count / max_count) * 255)
-        if intensity > 255:
-            intensity = 255
+        
+        if display_mode == 'positions':
+            threshold = true_max * 0.004
+            filtered_values = [v for v in data_to_display.values() if abs(v - true_max) > threshold]
+            max_count = max(filtered_values, default=true_max) if filtered_values else true_max
+            intensity = int((count / max_count) * 255)
+        else:
+            # For threatened positions, use a logarithmic scale
+            if true_max > true_min:
+                log_min = math.log(true_min + 1)  # Add 1 to avoid log(0)
+                log_max = math.log(true_max + 1)
+                log_count = math.log(count + 1)
+                intensity = int(((log_count - log_min) / (log_max - log_min)) * 255)
+            else:
+                intensity = 255 if count > 0 else 0
+        intensity = max(0, min(intensity, 255))  # Ensure intensity is between 0 and 255
+        
         radius = square_size // 4
-        color = (255, 0, 0, intensity)  # Red with varying opacity
+        if display_mode == 'positions':
+            color = (0, 0, 0, intensity)
+        elif display_mode == 'threatened':
+            color = (255, 0, 0, intensity)
+        else:
+            color = (0, 255, 0, intensity)
+
         circle_center = ((x - 1) * square_size + square_size // 2, (y - 1) * square_size + square_size // 2)
 
-        # Draw circle
         pygame.draw.circle(surface, color, circle_center, radius)
 
-        # Render count number
         if board_display == "percent":
             count_text = font.render(f"{(count / true_max * 100):.1f}%", True, WHITE)
         else:
@@ -239,27 +206,34 @@ def render_counts(screen, total_positions_seen):
     render_text(screen, "↑" + str(true_max), (square_size * 8 + 5, 20) , WHITE, 16)
     render_text(screen, "Top square's total!", (square_size * 8 + 5, 40) , WHITE, 16)
     render_text(screen, "(All %'s are based on the total)", (square_size * 8 + 5, 60) , WHITE, 12)
-    render_text(screen, "Promotions still considered pawns", (square_size * 8 + 5, 80) , WHITE, 12)
+    # render_text(screen, "Promotions still considered pawns", (square_size * 8 + 5, 80) , WHITE, 12)
     render_text(screen, "More options in commandline!", (square_size * 8 + 5, 100) , WHITE, 12)
     render_text(screen, settings["pgnfile"], (square_size * 8 + 5, 120) , WHITE, 12)
     render_text(screen, settings["piece_color"], (square_size * 8 + 5, 140) , WHITE, 12)
     render_text(screen, "Total games: " + str(total_games), (square_size * 8 + 5, 160) , WHITE, 12)
+    if display_mode == 'positions':
+        render_text(screen, "Displaying: Positions", (square_size * 8 + 5, 180), WHITE, 12)
+    elif display_mode == 'threatened':
+        render_text(screen, "Displaying: Threatened by", (square_size * 8 + 5, 180), WHITE, 12)
+    else:
+        render_text(screen, "Displaying: Threatening", (square_size * 8 + 5, 180), WHITE, 12)
 
-    
-    render_text(screen, "ESC = Exit", (square_size * 8 + 5, screen_height - 90), WHITE, 12)
-    render_text(screen, "PRTSCRN screenshot path_1.png", (square_size * 8 + 5, screen_height - 60), WHITE, 12)
-    render_text(screen, "ENTER = New Query", (square_size * 8 + 5, screen_height - 30), WHITE, 12)
+    render_text(screen, "ESC = Exit", (square_size * 8 + 5, screen_height - 120), WHITE, 12)
+    render_text(screen, "PRTSCRN screenshot path_1.png", (square_size * 8 + 5, screen_height - 90), WHITE, 12)
+    render_text(screen, "ENTER = New Query", (square_size * 8 + 5, screen_height - 60), WHITE, 12)
+    render_text(screen, "T = Toggle Positions/Threatened by/Positions Threatening", (square_size * 8 + 5, screen_height - 30), WHITE, 12)
 
+import chess
+import chess.pgn
+import io
+from collections import defaultdict
 
-
-# Function to process a single game
-def process_single_game(game_data, starting_positions, total_positions_seen, xy_coords):
+def process_single_game(game_data, starting_positions, total_positions_seen, total_threatened_positions, total_threat_positions, xy_coords):
     global total_games
     positions = initialize_positions()
     positions_seen = defaultdict(int)
-
-    if VERBOSE:
-        print('\n')
+    threatened_positions = defaultdict(int)
+    threat_positions = defaultdict(int)
 
     if isinstance(game_data, str):
         game_stream = io.StringIO(game_data)
@@ -271,177 +245,162 @@ def process_single_game(game_data, starting_positions, total_positions_seen, xy_
 
     game_moves = game.mainline_moves()
 
-    if game_moves is None:
-        print("No moves found in game! Processing next game.")
-        return
-
-    if game is None:
-        print("No game entirely! Processing next game.")
+    if game_moves is None or game is None:
+        print("No moves or game found! Processing next game.")
         return
 
     board = game.board()
     positions_found = False
     for move in game_moves:
-        from_square = str(move)[:2]
-        to_square = str(move)[2:4]
+        from_square = chess.SQUARE_NAMES[move.from_square]
+        to_square = chess.SQUARE_NAMES[move.to_square]
 
-        # Check if to_position is occupied and if so mark the other piece with an 'x' because it has been taken and it's important to mark it that way to track pieces properly
+        # Update positions and handle special moves (castling, en passant)
         for path in positions:
             if path[-1] == to_square:
                 path.append('x')
-
-        # Check for en passant capture
-        piece = board.piece_at(chess.parse_square(from_square))
-        if piece and piece.piece_type == chess.PAWN:
-            if abs(chess.parse_square(from_square) - chess.parse_square(to_square)) in [7, 9]:  # Diagonal move
-                if (from_square[1] == '5' and to_square[1] == '6') or (from_square[1] == '4' and to_square[1] == '3'):
-                    # If the destination square is empty, it's an en passant capture
-                    if board.piece_at(chess.parse_square(to_square)) is None:
-                        # Determine the captured pawn's square
-                        if from_square[0] != to_square[0]:
-                            captured_pawn_square = to_square[0] + from_square[1]
-                            for path in positions:
-                                if path[-1] == captured_pawn_square:
-                                    path.append('x')
-                                    break
-
-        # Update the piece's position
-        for path in positions:
             if path[-1] == from_square:
                 path.append(to_square)
                 positions_found = True
-                break
 
-        # Check for castling, the above code handles the king's movement already, without this the rook's movement gets lost.
-        piece = board.piece_at(chess.parse_square(from_square))
-        if piece and piece.piece_type == chess.KING:
-            if from_square == 'e1' and to_square == 'g1':
-                # Kingside castling for White
+        # Handle castling
+        if board.is_castling(move):
+            if to_square == 'g1':
                 for path in positions:
                     if path[-1] == 'h1':
                         path.append('f1')
-            elif from_square == 'e1' and to_square == 'c1':
-                # Queenside castling for White
+            elif to_square == 'c1':
                 for path in positions:
                     if path[-1] == 'a1':
                         path.append('d1')
-            elif from_square == 'e8' and to_square == 'g8':
-                # Kingside castling for Black
+            elif to_square == 'g8':
                 for path in positions:
                     if path[-1] == 'h8':
                         path.append('f8')
-            elif from_square == 'e8' and to_square == 'c8':
-                # Queenside castling for Black
+            elif to_square == 'c8':
                 for path in positions:
                     if path[-1] == 'a8':
                         path.append('d8')
 
+        # Push the move only if it is legal
+        if move in board.legal_moves:
+            board.push(move)
+        else:
+            print(f"Illegal move found: {move}. Skipping the rest of the game.")
+            return
 
-
-        board.push(move)
-
-    if positions == [] or not positions_found:
+    if not positions_found:
         print("No positions found in game! Processing next game.")
         return
-    else:
-        total_games += 1
 
-    if VERBOSE:
-        print(positions)
-        print('\n')
+    total_games += 1
 
-
-    
-    # Iterate through positions to count occurrences
+    # Count positions
     for path in positions:
         if path[0] in starting_positions:
-            # Check and remove 'x' if it's the last element
-            if path[-1] == 'x':
-                path.pop()  # Remove 'x' from the list
-
             for pos in path:
-                
                 if pos != 'x':
-                    if VERBOSE:
-                        print(pos)
                     if xy_coords:
                         x, y = chess_notation_to_indices(pos)
                         coord_str = f"{x},{y}"
                     else:
                         coord_str = pos
                     positions_seen[coord_str] += 1
+                    
+                    # Since we just found a new position, this is an opportune time to calculate its threatened positions
+                    piece_square = chess.parse_square(pos)
+                    if piece_square is not None and board.piece_type_at(piece_square) is not None:
+                        piece_color = board.color_at(piece_square)
+                        piece_type = board.piece_type_at(piece_square)
+                        if VERBOSE:
+                            print(f"Piece at {pos}: {chess.PIECE_NAMES[piece_type]} ({chess.COLOR_NAMES[piece_color]})")
+                        
+                        # threatened by (reverted to original functionality)
+                        for square in chess.SQUARES:
+                            if board.piece_type_at(square) is not None:
+                                if board.color_at(square) != piece_color:
+                                    if board.is_attacked_by(board.color_at(square), piece_square):
+                                        threatened_square = chess.SQUARE_NAMES[piece_square]
+                                        if xy_coords:
+                                            x, y = chess_notation_to_indices(threatened_square)
+                                            threatened_coord = f"{x},{y}"
+                                        else:
+                                            threatened_coord = threatened_square
+                                        threatened_positions[threatened_coord] += 1
+                                        if VERBOSE:
+                                            print(f"Position {threatened_coord} is threatened by opponent")
+                        
+                        # threatening (keeping the improved version)
+                        for square in chess.SQUARES:
+                            if board.is_attacked_by(piece_color, square):
+                                if board.piece_type_at(square) is not None and board.color_at(square) != piece_color:
+                                    threatened_square = chess.SQUARE_NAMES[square]
+                                    if xy_coords:
+                                        x, y = chess_notation_to_indices(threatened_square)
+                                        threat_coord = f"{x},{y}"
+                                    else:
+                                        threat_coord = threatened_square
+                                    threat_positions[threat_coord] += 1
+                                    if VERBOSE:
+                                        print(f"Position {threat_coord} is threatened by {chess.PIECE_NAMES[piece_type]}")
+    if VERBOSE:
+        print("Final threatened positions:", threatened_positions)
+        print("Final threat positions:", threat_positions)
 
-    # Aggregate counts from positions_seen into total_positions_seen
+    # Aggregate counts
     for coord, count in positions_seen.items():
-        if VERBOSE:
-            print(coord, count)
         total_positions_seen[coord] += count
+    for coord, count in threatened_positions.items():
+        total_threatened_positions[coord] += count
+    for coord, count in threat_positions.items():
+        total_threat_positions[coord] += count
 
-# Function to update positions for all games
+
 def update_positions(games, starting_positions, xy_coords):
     global settings
     total_positions_seen = defaultdict(int)
+    total_threatened_positions = defaultdict(int)
+    total_threat_positions = defaultdict(int)
 
-    
     settings["piece_color"] = None
-    for piece_type in white_piece_type:
-        for piece in piece_type:
+    for piece_type in white_piece_type + black_piece_type:
+        for piece in piece_type[1:]:
             if piece in starting_positions:
-                settings["piece_color"] = "white"
-                if len(starting_positions) > 1:
-                    settings["piece_type"] = piece_type[0]
-                else:
-                    settings["piece_type"] = piece_type[0] + starting_positions[0]
+                settings["piece_color"] = "white" if piece_type in white_piece_type else "black"
+                settings["piece_type"] = piece_type[0] + (starting_positions[0] if len(starting_positions) == 1 else "")
                 break
-
-    if settings["piece_color"] is None:
-        for piece_type in black_piece_type:
-            for piece in piece_type:
-                if piece in starting_positions:
-                    settings["piece_color"] = "black"
-                    if len(starting_positions) > 1:
-                        settings["piece_type"] = piece_type[0]
-                    else:
-                        settings["piece_type"] = piece_type[0] + starting_positions[0]
-                    break
-
+        if settings["piece_color"]:
+            break
 
     for game_data in games:
-        process_single_game(game_data, starting_positions, total_positions_seen, xy_coords)
+        process_single_game(game_data, starting_positions, total_positions_seen, total_threatened_positions, total_threat_positions, xy_coords)
 
-    return total_positions_seen
+    return total_positions_seen, total_threatened_positions, total_threat_positions
 
-# Function to get starting positions by piece type
 def get_starting_positions_by_piece_type(piece_type, piece_color):
     global settings
-    if piece_color == 'white' or piece_color == 'w':
-        piece_array = white_piece_type
-        settings["piece_color"] = "white"
-    else:
-        piece_array = black_piece_type
-        settings["piece_color"] = "black"
+    piece_array = white_piece_type if piece_color.lower() in ['white', 'w'] else black_piece_type
+    settings["piece_color"] = "white" if piece_color.lower() in ['white', 'w'] else "black"
 
     for piece in piece_array:
         if piece[0].upper() == piece_type.upper():
             return piece[1:]
     return []
 
-# Function to analyze games by piece type
 def analyze_games_by_piece_type(games, piece_type, piece_color, xy_coords):
     starting_positions = get_starting_positions_by_piece_type(piece_type, piece_color)
     if not starting_positions:
         print(f"No starting positions found for piece type {piece_type} and color {piece_color}.")
-        return {}
+        return {}, {}
 
-    total_positions_seen = update_positions(games, starting_positions, xy_coords)
-    return total_positions_seen
+    return update_positions(games, starting_positions, xy_coords)
 
 def parse_pgn(file_path):
     with open(file_path, 'r') as f:
         content = f.read()
     
-        games = content.split('\n[Event ')
-        games = ['[Event ' + game for game in games if game]
+    games = content.split('\n[Event ')
+    games = ['[Event ' + game for game in games if game]
 
     return games
 
@@ -449,52 +408,45 @@ def main():
     global settings, total_games
     settings = parse_arguments()
     
-    file_path = ""
-    if settings["pgnfile"] is None:
-        file_path = input(f"Enter the path to the PGN file (default={file_path}): ")
-    else:
-        file_path = settings["pgnfile"]
-    if file_path == "":
-        file_path = "myfile.pgn"
-    
-    settings["pgnfile"] = file_path # for use elsewhere in the code
+    file_path = settings["pgnfile"] or input(f"Enter the path to the PGN file (default={default_filename}): ") or default_filename
+    settings["pgnfile"] = file_path
     games = parse_pgn(file_path)
-    xy_coords = True  # Don't set this to False as this will mess up some of the code with the rendering in pygame
+    xy_coords = True
 
     screen = pygame.display.set_mode((screen_width, screen_height))
-    pygame.display.set_caption("Chessboard Position Frequency")
+    pygame.display.set_caption("Chessboard Position and Threat Frequency")
 
     clock = pygame.time.Clock()
     running = True
     
     first_run = True
 
-    input_mode = 'choose_mode'  # Start by asking for the mode (position or piece type)
+    input_mode = 'choose_mode'
     piece_type = ""
     piece_color = ""
     starting_position = ""
-    stats = {}
+    position_stats = {}
+    threatened_stats = {}
+    threat_stats = {}
+    display_mode = 'positions'  # Start with displaying positions
 
     time = 0
     total_games = 0
 
     while running:
-        screen.fill(LBLUE)  # White-ish background
+        screen.fill(LBLUE)
         draw_board(screen)
 
-        if stats:
-            render_counts(screen, stats)
+        if position_stats or threatened_stats or threat_stats:
+            render_counts(screen, position_stats, threatened_stats, threat_stats, display_mode)
             
-        if (settings["timeout"] == -1):
+        if settings["timeout"] == -1:
             if input_mode == 'choose_mode':
                 render_text(screen, "Choose search mode (1) Piece Type, (2) Starting Position): ", (10, screen_height - 70), WHITE)
-
             elif input_mode == 'piece_type':
                 render_text(screen, "Enter piece type (K)ing, (P)awn, etc: " + piece_type, (10, screen_height - 70), WHITE)
-
             elif input_mode == 'piece_color':
                 render_text(screen, "Enter piece color (w)hite / (b)lack: " + piece_color, (10, screen_height - 70), WHITE)
-
             elif input_mode == 'position':
                 render_text(screen, "Enter starting position (e.g., a1, b2): " + starting_position, (10, screen_height - 70), WHITE)
 
@@ -517,10 +469,10 @@ def main():
         elif isinstance(settings["search_mode"], int) and first_run:
             if settings["search_mode"] == 1:
                 render_text(screen, "Calculating...", (screen_width / 2, screen_height / 2), WHITE, 70, True, True)
-                stats = analyze_games_by_piece_type(games, settings["piece_type"], settings["piece_color"], xy_coords)
+                position_stats, threatened_stats, threat_stats = analyze_games_by_piece_type(games, settings["piece_type"], settings["piece_color"], xy_coords)
             else:
                 render_text(screen, "Calculating...", (screen_width / 2, screen_height / 2), WHITE, 70, True, True)
-                stats = update_positions(games, [settings["starting_position"]], xy_coords)
+                position_stats, threatened_stats, threat_stats = update_positions(games, [settings["starting_position"]], xy_coords)
             first_run = False
         else:
             for event in pygame.event.get():
@@ -532,12 +484,19 @@ def main():
                         running = False
                     elif event.key == pygame.K_PRINTSCREEN:
                         save_screenshot(screen, file_path)
+                    elif event.key == pygame.K_t:
+                        if display_mode == 'positions':
+                            display_mode = 'threat'
+                        elif display_mode == 'threat':
+                            display_mode = 'threatened'
+                        elif display_mode == 'threatened':
+                            display_mode = 'positions'
 
                     if input_mode == 'choose_mode':
                         total_games = 0
                         if event.key == pygame.K_1 or event.key == pygame.K_KP1:
                             input_mode = 'piece_type'
-                        elif event.key == pygame.K_2 or event.key == pygame.K_KP1:
+                        elif event.key == pygame.K_2 or event.key == pygame.K_KP2:
                             input_mode = 'position'
 
                     elif input_mode == 'piece_type':
@@ -553,18 +512,17 @@ def main():
                             input_mode = 'analyze_piece_type'
                             
                             render_text(screen, "Calculating...", (screen_width / 2, screen_height / 2), WHITE, 70, True, True)
-                            stats = analyze_games_by_piece_type(games, piece_type, piece_color, xy_coords)
+                            position_stats, threatened_stats, threat_stats = analyze_games_by_piece_type(games, piece_type, piece_color, xy_coords)
                         elif event.key == pygame.K_BACKSPACE:
                             piece_color = piece_color[:-1]
                         else:
                             piece_color += event.unicode
 
-
                     elif input_mode == 'position':
                         if event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
                             input_mode = 'analyze_position'
                             render_text(screen, "Calculating...", (screen_width / 2, screen_height / 2), WHITE, 70, True, True)
-                            stats = update_positions(games, [starting_position], xy_coords)
+                            position_stats, threatened_stats, threat_stats = update_positions(games, [starting_position], xy_coords)
                         elif event.key == pygame.K_BACKSPACE:
                             starting_position = starting_position[:-1]
                         else:
@@ -577,7 +535,6 @@ def main():
         clock.tick(60)
 
     pygame.quit()
-
 
 if __name__ == "__main__":
     main()
