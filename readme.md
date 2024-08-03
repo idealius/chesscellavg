@@ -24,7 +24,7 @@ https://theweekinchess.com/twic
 
 # Bonus data just for showing up:
 
-Looking at white GM Wins, literally thousands and thousands of games over the last 12 years, black is positions, red is threatened by, green is threatening opponent (P) is pawns, (Qd1) is the white queen:
+Looking at white GM wins for white, literally thousands and thousands of games over the last 12 years, black is positions, red is threatened by, green is threatening opponent (P) is pawns, (Qd1) is the white queen:
 
 ![gamesofgms_white_wins_queen_positions.png](pngs/gamesofgms_white_wins_queen_positions.png?raw=true "gamesofgms_white_wins_queen_positions.png")
 
