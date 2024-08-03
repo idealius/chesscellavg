@@ -170,15 +170,16 @@ def render_counts(screen, total_positions_seen, total_threatened_positions, tota
             max_count = max(filtered_values, default=true_max) if filtered_values else true_max
             intensity = int((count / max_count) * 255)
         else:
-            # For threatened positions, use a logarithmic scale
+            # For threatened and threatening positions, use a logarithmic scale with a minimum opacity
             if true_max > true_min:
                 log_min = math.log(true_min + 1)  # Add 1 to avoid log(0)
                 log_max = math.log(true_max + 1)
                 log_count = math.log(count + 1)
-                intensity = int(((log_count - log_min) / (log_max - log_min)) * 255)
+                intensity = int(((log_count - log_min) / (log_max - log_min)) * 200 + 55)  # Scale from 55 to 255
             else:
-                intensity = 255 if count > 0 else 0
-        intensity = max(0, min(intensity, 255))  # Ensure intensity is between 0 and 255
+                intensity = 255 if count > 0 else 55  # Minimum opacity of about 20%
+        
+        intensity = max(55, min(intensity, 255))  # Ensure intensity is between 55 and 255
         
         radius = square_size // 4
         if display_mode == 'positions':
@@ -198,6 +199,8 @@ def render_counts(screen, total_positions_seen, total_threatened_positions, tota
             count_text = font.render(f"{count}", True, WHITE)
         text_rect = count_text.get_rect(center=circle_center)
         surface.blit(count_text, text_rect)
+    
+    screen.blit(surface, (0, 0))
     
     screen.blit(surface, (0, 0))
     
