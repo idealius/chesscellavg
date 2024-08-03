@@ -218,10 +218,13 @@ def render_counts(screen, total_positions_seen, total_threatened_positions, tota
     else:
         render_text(screen, "Displaying: Threatening", (square_size * 8 + 5, 180), WHITE, 12)
 
-    render_text(screen, "ESC = Exit", (square_size * 8 + 5, screen_height - 120), WHITE, 12)
+    render_text(screen, "T=Toggle Positions, Threatened by,", (square_size * 8 + 5, screen_height - 180), WHITE, 12)
+    render_text(screen, "Positions Threatening", (square_size * 8 + 5, screen_height - 150), WHITE, 12)
+    
+    render_text(screen, "ESC=Exit", (square_size * 8 + 5, screen_height - 120), WHITE, 12)
     render_text(screen, "PRTSCRN screenshot path_1.png", (square_size * 8 + 5, screen_height - 90), WHITE, 12)
-    render_text(screen, "ENTER = New Query", (square_size * 8 + 5, screen_height - 60), WHITE, 12)
-    render_text(screen, "T = Toggle Positions/Threatened by/Positions Threatening", (square_size * 8 + 5, screen_height - 30), WHITE, 12)
+    render_text(screen, "ENTER=New Query", (square_size * 8 + 5, screen_height - 60), WHITE, 12)
+    
 
 import chess
 import chess.pgn
