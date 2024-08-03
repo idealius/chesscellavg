@@ -1,5 +1,7 @@
 # Intro
 
+Just solving Chess, guys.
+
 I have always been very curious to see what it means to take control of the center in a chess game in terms of bare piece percentages played there.
 I've also been curious if certain board positions are just overall very bad for pieces statistically.
 This is without considering any openings or defenses, which limits its usefulness, but since I couldn't find anything that did this, I made it.
