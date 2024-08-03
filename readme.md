@@ -26,7 +26,7 @@ Looking at white GM Wins, literally thousands and thousands of games over the la
 
 ![gamesofgms_white_wins_queen_positions.png](pngs/gamesofgms_white_wins_queen_positions.png?raw=true "gamesofgms_white_wins_queen_positions.png")
 
-![gamesofgms_white_wins_queen_threatened_by.png](pngs/gamesofgms_white_wins_queen_threatened_by.pngy?raw=true "gamesofgms_white_wins_queen_threatened_by.png")
+![gamesofgms_white_wins_queen_threatened_by.png](pngs/gamesofgms_white_wins_queen_threatened_by.png?raw=true "gamesofgms_white_wins_queen_threatened_by.png")
 
 ![gamesofgms_white_wins_queen_threatening.png](pngs/gamesofgms_white_wins_queen_threatening.png?raw=true "gamesofgms_white_wins_queen_threatening.png")
 
