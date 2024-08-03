@@ -20,7 +20,7 @@ https://theweekinchess.com/twic
 
 # Major Changes:
 
-8/2/2024 Trying Claude Sonnet for the first time, because of the advanced number of tokens compared to ChatGPT4: Added threatening opponent and threatened by toggles. This greatly increases calculation time for large PGN files with a large number of games: 100k+, etc.
+8/2/2024 Trying Claude Sonnet for the first time, because of the advanced number of tokens compared to ChatGPT4: Added threatening opponent and threatened by... opponent toggles. This greatly increases calculation time for large PGN files with a large number of games: 100k+, etc.
 
 # Bonus data just for showing up:
 
