@@ -42,6 +42,26 @@ Here is an example command line to get fullscreen (it defaults to 800 x 600)
 ```
 python chesscellavg.py --pgnfile myfile.pgn --screen_width 1920 --screen_height 1080 --search_mode 1 --piece_type P --piece_color white
 ```
+```
+optional arguments:
+  -h, --help            show this help message and exit
+  --pgnfile PGNFILE     Path to the PGN file.
+  --verbose             Enable debug output.
+  --screen_width SCREEN_WIDTH
+                        Width of the screen.
+  --screen_height SCREEN_HEIGHT
+                        Height of the screen.
+  --search_mode {1,2}   Search mode: 1 for Piece Type, 2 for Starting Position.
+  --piece_type PIECE_TYPE
+                        Type of piece to search for (K)ing, (P)awn, etc. Required for piece type search mode
+  --starting_position STARTING_POSITION
+                        Starting position to search for (e.g., a1, b2). Required for starting position search mode
+  --piece_color PIECE_COLOR
+                        Color of the piece to search for (white or black). Required for piece type search mode
+  --timeout TIMEOUT     Timeout in seconds. Default is -1, meaning no timeout.
+  --board_display BOARD_DISPLAY
+                        Show board positions in (percent) or (totals)
+```
 
 Here is an example command line to split up a PGN file by wins / losses / draws (you can also just run either of these and it takes user input)
 ```
