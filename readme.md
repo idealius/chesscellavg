@@ -70,6 +70,20 @@ python pgnfilter.py --input myfile.pgn --output myfile2 --process split --color 
 
 * split is particularly useful because it splits the wins, losses, and draws into separate files as it processes
 
+```
+optional arguments:
+  -h, --help            show this help message and exit
+  --input INPUT         Path to the input PGN file.
+  --output OUTPUT       Base name for the output PGN files.
+  --process {win,loss,draw,all,split}
+                        Type of result to filter.
+  --playername PLAYERNAME
+                        Player name to filter games by.
+  --color {white,black,both}
+                        Color to filter games by.
+```
+
+
 # Details
 
 It has two main modes, one where you choose a piece type for a certain color on the board - specifically for Pawns, mostly, but works for other pieces too, then it totals all the positions in games, across multiple games, for each board tile. It can also do this for one piece at a time, based on starting position.
