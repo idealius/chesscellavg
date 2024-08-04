@@ -335,7 +335,7 @@ def process_single_game(game_data, starting_positions, total_positions_seen, tot
                                         if VERBOSE:
                                             print(f"Position {threatened_coord} is threatened by opponent")
                         
-                        # threatening opponent)
+                        # threatening opponent
                         for square in chess.SQUARES:
                             if board.is_attacked_by(piece_color, square):
                                 if board.piece_type_at(square) is not None and board.color_at(square) != piece_color:

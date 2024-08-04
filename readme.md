@@ -47,6 +47,9 @@ Here is an example command line to split up a PGN file by wins / losses / draws 
 ```
 python pgnfilter.py --input myfile.pgn --output myfile2 --process split --color white
 ```
+
+* split is particularly useful because it splits the wins, losses, and draws into separate files as it processes
+
 # Details
 
 It has two main modes, one where you choose a piece type for a certain color on the board - specifically for Pawns, mostly, but works for other pieces too, then it totals all the positions in games, across multiple games, for each board tile. It can also do this for one piece at a time, based on starting position.
