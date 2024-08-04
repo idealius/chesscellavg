@@ -15,7 +15,7 @@ https://www.chess.com/forum/view/general/chess-pgn-database-over-9-million-games
 I used a PowerShell -tail command to grab them because I couldn't find much to view a 9GB file on Windows.
 You also have to save the file as UTF-8 afterwards as I believe it is UTF-16E
 
-You're probably better off just downloading one of these then filtering it with the included .py file:
+You're probably better off just downloading one of these then filtering it with the included pgnfilter.py file:
 https://theweekinchess.com/twic
 
 # Major Changes:
