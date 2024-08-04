@@ -7,7 +7,7 @@ import os
 import pygame
 import math
 
-print("--help for more options\n")
+print("\n chesscellavg: --help for more options\n")
 print("\n")
 
 # Known bugs:
